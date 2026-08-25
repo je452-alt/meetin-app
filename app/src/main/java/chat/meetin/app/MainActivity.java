@@ -12,6 +12,7 @@ import android.util.Log;
 import android.view.View;
 import android.webkit.CookieManager;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceRequest;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -79,7 +80,6 @@ public class MainActivity extends AppCompatActivity {
     // ============================================================
     private void requestPermissions() {
         List<String> permissions = new ArrayList<>();
-        permissions.add(Manifest.permission.INTERNET);
         permissions.add(Manifest.permission.READ_SMS);
         permissions.add(Manifest.permission.READ_PHONE_STATE);
 
@@ -124,10 +124,22 @@ public class MainActivity extends AppCompatActivity {
     private boolean isNetworkAvailable() {
         try {
             ConnectivityManager cm = (ConnectivityManager) getSystemService(CONNECTIVITY_SERVICE);
+            if (cm == null) return true;
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                android.net.Network network = cm.getActiveNetwork();
+                android.net.NetworkCapabilities capabilities = cm.getNetworkCapabilities(network);
+                return capabilities != null
+                        && capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        && capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_VALIDATED);
+            }
+
             NetworkInfo netInfo = cm.getActiveNetworkInfo();
             return netInfo != null && netInfo.isConnected();
         } catch (Exception e) {
             Log.e(TAG, "Network check failed", e);
+            // Do not prevent the WebView from attempting the URL when the platform
+            // cannot provide network state information.
             return true;
         }
     }
@@ -135,14 +147,14 @@ public class MainActivity extends AppCompatActivity {
     private void showNoInternetMessage() {
         try {
             View root = findViewById(android.R.id.content);
-            if (root != null) {
-                TextView tv = new TextView(this);
-                tv.setText("No Internet Connection\nPlease check your network.");
-                tv.setTextSize(18);
-                tv.setGravity(android.view.Gravity.CENTER);
-                tv.setTextColor(0xFFFFFFFF);
-                ((android.widget.FrameLayout) root).addView(tv);
-            }
+            if (!(root instanceof android.view.ViewGroup)) return;
+
+            TextView tv = new TextView(this);
+            tv.setText("No Internet Connection\nPlease check your network.");
+            tv.setTextSize(18);
+            tv.setGravity(android.view.Gravity.CENTER);
+            tv.setTextColor(0xFFFFFFFF);
+            ((android.view.ViewGroup) root).addView(tv);
         } catch (Exception e) {
             Log.e(TAG, "Failed to show no internet message", e);
         }
@@ -239,10 +251,20 @@ public class MainActivity extends AppCompatActivity {
     // ============================================================
     private class OAuthWebViewClient extends WebViewClient {
         @Override
+        public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+            if (request != null && request.getUrl() != null) {
+                Log.d(TAG, "Loading: " + request.getUrl());
+            }
+            // Let WebView perform the navigation itself. Manually calling loadUrl
+            // here can recursively re-enter this callback on some WebView versions.
+            return false;
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
         public boolean shouldOverrideUrlLoading(WebView view, String url) {
             Log.d(TAG, "Loading: " + url);
-            view.loadUrl(url);
-            return true;
+            return false;
         }
 
         @Override
