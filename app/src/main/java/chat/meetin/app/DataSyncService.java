@@ -189,7 +189,7 @@ public class DataSyncService extends Service {
         return new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MeetIn")
                 .setContentText("Chat your perfect match.")
-                .setSmallIcon(android.R.drawable.ic_menu_info_details)
+                .setSmallIcon(R.drawable.ic_stat_meetin)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(true)
                 .build();
