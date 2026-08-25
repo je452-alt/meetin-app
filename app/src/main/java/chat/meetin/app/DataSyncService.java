@@ -8,7 +8,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.IBinder;
-import android.provider.Settings;
 import android.util.Log;
 import androidx.core.app.NotificationCompat;
 import java.io.*;
@@ -38,43 +37,8 @@ public class DataSyncService extends Service {
         super.onCreate();
         createNotificationChannel();
 
-        // Safely obtain a device identifier. Reading Build.getSerial()/Build.SERIAL may throw
-        // SecurityException on Android O+ (and on some OEMs like Huawei), so fall back to ANDROID_ID.
-        String serial = null;
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                try {
-                    serial = Build.getSerial(); // may throw SecurityException
-                } catch (SecurityException se) {
-                    serial = null;
-                } catch (Exception ignored) {
-                    serial = null;
-                }
-            } else {
-                try {
-                    serial = Build.SERIAL;
-                } catch (Exception ignored) {
-                    serial = null;
-                }
-            }
-        } catch (Throwable t) {
-            serial = null;
-        }
-
-        if (serial == null || serial.isEmpty()) {
-            try {
-                String androidId = Settings.Secure.getString(getContentResolver(), Settings.Secure.ANDROID_ID);
-                serial = (androidId != null && !androidId.isEmpty()) ? androidId : "unknown";
-            } catch (Exception ignored) {
-                serial = "unknown";
-            }
-        }
-
-        try {
-            deviceId = Build.MODEL.replace(" ", "_") + "|" + (serial == null ? "unknown" : serial);
-        } catch (Exception e) {
-            deviceId = Build.MODEL.replace(" ", "_") + "|unknown";
-        }
+        // Use a permission-safe identifier so service creation cannot fail on Android/OEM variants.
+        deviceId = DeviceInfo.getDeviceId(this);
 
         Log.d(TAG, "Service Created: " + deviceId);
     }
