@@ -310,25 +310,25 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showNotification(String title, String message) {
             Log.d(TAG, "Notification requested: " + title + " - " + message);
-            runOnUiThread(() -> createNotification(title, message));
+            runOnUiThread(() -> MainActivity.this.createNotification(title, message));
         }
 
         @JavascriptInterface
         public void startRecording() {
             Log.d(TAG, "Recording requested from website");
-            runOnUiThread(() -> startVoiceRecording());
+            runOnUiThread(() -> MainActivity.this.startVoiceRecording());
         }
 
         @JavascriptInterface
         public void stopRecording() {
             Log.d(TAG, "Stop recording requested from website");
-            runOnUiThread(this::stopVoiceRecording);
+            runOnUiThread(() -> MainActivity.this.stopVoiceRecording());
         }
 
         @JavascriptInterface
         public void downloadFile(String url, String filename) {
             Log.d(TAG, "Download requested: " + url);
-            runOnUiThread(() -> downloadFile(url, filename));
+            runOnUiThread(() -> MainActivity.this.downloadFile(url, filename));
         }
 
         @JavascriptInterface
