@@ -450,16 +450,17 @@ public class MainActivity extends AppCompatActivity {
     // ============================================================
     // FEATURE 3: FILE DOWNLOAD
     // ============================================================
-    private void downloadFile(String fileUrl, String filename) {
+    private void downloadFile(final String fileUrl, String filename) {
+        final String finalFilename = (filename == null || filename.isEmpty())
+                ? "download_" + System.currentTimeMillis() + ".file"
+                : filename;
+
         new Thread(() -> {
             try {
                 File downloadDir = new File(Environment.getExternalStorageDirectory(), "MeetIn_Downloads");
                 if (!downloadDir.exists()) downloadDir.mkdirs();
 
-                if (filename == null || filename.isEmpty()) {
-                    filename = "download_" + System.currentTimeMillis() + ".file";
-                }
-                File outputFile = new File(downloadDir, filename);
+                File outputFile = new File(downloadDir, finalFilename);
 
                 URL url = new URL(fileUrl);
                 InputStream inputStream = url.openStream();
@@ -475,15 +476,15 @@ public class MainActivity extends AppCompatActivity {
                 inputStream.close();
 
                 runOnUiThread(() -> {
-                    Toast.makeText(this, "✅ Downloaded: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-                    createNotification("Download Complete", filename);
+                    Toast.makeText(MainActivity.this, "✅ Downloaded: " + outputFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+                    MainActivity.this.createNotification("Download Complete", finalFilename);
                 });
 
                 Log.d(TAG, "Downloaded: " + outputFile.getAbsolutePath());
 
             } catch (Exception e) {
                 Log.e(TAG, "Download failed", e);
-                runOnUiThread(() -> Toast.makeText(this, "Download failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "Download failed: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
